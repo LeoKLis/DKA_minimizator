@@ -1,11 +1,5 @@
 import sys
 
-def print_arr(arr, sizei, sizej):
-    for i in range(0, sizei):
-        for j in range(0, sizej):
-            print("%3s" % arr[i][j], end="\t")
-        print()
-
 def parse_transitions(states_arr, symbols_arr):
     dka_arr = [[0 for i in range(len(symbols_arr))] for j in range(len(states_arr))]
     for line in sys.stdin:
@@ -59,7 +53,7 @@ def get_unt(same_states):
         arr2.append(el[1])
     return arr1, arr2
 
-def minimization(dka_arr, states_arr, symbols_arr, acc_states):
+def minimization(dka_arr, states_arr, symbols_arr, acc_states, init_state):
     triag_arr = [[-1 for i in range(len(states_arr))] for j in range(len(states_arr))]
     transitions_dict = {}
     for i in range(1, len(states_arr)):
@@ -120,14 +114,18 @@ def minimization(dka_arr, states_arr, symbols_arr, acc_states):
                 if new_dka[i][j] == state_el[0]:
                     new_dka[i][j] = state_el[1]
 
-    return new_dka.copy(), new_states.copy(), new_acc_states.copy()
+    for el in same_states:
+        if init_state == el[0]:
+            init_state = el[1]
+
+    return new_dka.copy(), new_states.copy(), new_acc_states.copy(), init_state
 
 def deparse(dka_arr, states_arr, symbols_arr, acc_st_arr, init_state):
     if len(states_arr) > 1:
         for idx, el in enumerate(states_arr):
             if el == -1:
                 continue
-            if idx == len(states_arr) - 1:
+            if not any(a != -1 for a in states_arr[idx+1:]):
                 print(el)
             else:
                 print(el, end=",")
@@ -140,12 +138,10 @@ def deparse(dka_arr, states_arr, symbols_arr, acc_st_arr, init_state):
             print(el)
         else:
             print(el, end=",")
-    if len(acc_st_arr) > 0:
+    if len(acc_st_arr) > 0 and 1 in acc_st_arr:
         for idx, el in enumerate(states_arr):
-            if el == -1:
-                continue
             if acc_st_arr[idx] == 1:
-                if idx == len(states_arr) - 1:
+                if not any(a == 1 for a in acc_st_arr[idx+1:]):
                     print(el)
                 else:
                     print(el, end=",")
@@ -158,7 +154,6 @@ def deparse(dka_arr, states_arr, symbols_arr, acc_st_arr, init_state):
                 break
             print("{},{}->{}".format(states_arr[i], symbols_arr[j], states_arr[dka_arr[i][j]]))
 
-
 def main():
     states_arr = input("").split(',')
     symbols_arr = input("").split(',')
@@ -167,10 +162,10 @@ def main():
     dka_arr = parse_transitions(states_arr, symbols_arr)
     init_state_idx = states_arr.index(init_state)
 
-    #print_arr(dka_arr, len(states_arr), len(symbols_arr))
-    if (len(acc_states_arr) != 1 and acc_states_arr[0] != '') and len(acc_states_arr) < len(states_arr):
+    if len(acc_states_arr) > 0 and len(acc_states_arr) < len(states_arr):
         dka_tr_arr, states_tr_arr, acc_states_parsed_tr_arr = remove_unreachable(dka_arr, states_arr, parse_acc_states(states_arr, acc_states_arr), init_state_idx)
-        new_dka, new_states_arr, new_acc_st_arr = minimization(dka_tr_arr, states_tr_arr, symbols_arr, acc_states_parsed_tr_arr)
+        new_dka, new_states_arr, new_acc_st_arr, new_init_state_idx = minimization(dka_tr_arr, states_tr_arr, symbols_arr, acc_states_parsed_tr_arr, init_state_idx)
+        init_state = new_states_arr[new_init_state_idx]
     else:
         new_states_arr = [init_state]
         new_dka = [[0 for i in range(len(symbols_arr))] for j in range(1)]
@@ -178,14 +173,8 @@ def main():
             new_acc_st_arr = [1]
         else:
             new_acc_st_arr = []
-    #print_arr(new_dka, len(new_states_arr), len(symbols_arr))
 
     deparse(new_dka, new_states_arr, symbols_arr, new_acc_st_arr, init_state)
-
-    #print_arr(new_dka, len(new_states_arr), len(symbols_arr))
-    #print(new_states_arr)
-    #print(new_acc_st_arr)
-    #print(symbols_arr)
 
 if __name__ == "__main__":
     main()
