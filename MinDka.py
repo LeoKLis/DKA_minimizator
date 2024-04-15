@@ -90,7 +90,6 @@ def minimization(dka_arr, states_arr, symbols_arr, acc_states):
         for j in range(0, i):
             if triag_arr[i][j] == 0:
                 same_states.append([i, j])
-    print(same_states)
 
     new_dka = []
     new_states = []
@@ -99,11 +98,20 @@ def minimization(dka_arr, states_arr, symbols_arr, acc_states):
     erase_states, merge_states = get_unt(same_states)
 
     idx = 0
+    tmp = []
     while idx < len(states_arr):
         if idx not in erase_states:
             new_dka.append(dka_arr[idx])
             new_states.append(states_arr[idx])
             new_acc_states.append(acc_states[idx])
+        else:
+            if idx != len(states_arr) - 1:
+                for i in range(len(symbols_arr)):
+                    tmp.append(-1)
+                new_dka.append(tmp.copy())
+                tmp.clear()
+                new_states.append(-1)
+                new_acc_states.append(-1)
         idx += 1
     
     for state_el in same_states:
@@ -114,8 +122,42 @@ def minimization(dka_arr, states_arr, symbols_arr, acc_states):
 
     return new_dka.copy(), new_states.copy(), new_acc_states.copy()
 
-    
-#print_arr(triag_arr, len(states_arr), len(states_arr))
+def deparse(dka_arr, states_arr, symbols_arr, acc_st_arr, init_state):
+    if len(states_arr) > 1:
+        for idx, el in enumerate(states_arr):
+            if el == -1:
+                continue
+            if idx == len(states_arr) - 1:
+                print(el)
+            else:
+                print(el, end=",")
+    else:
+        print(states_arr[0])
+    for idx, el in enumerate(symbols_arr):
+        if el == -1:
+            continue
+        if idx == len(symbols_arr) - 1:
+            print(el)
+        else:
+            print(el, end=",")
+    if len(acc_st_arr) > 0:
+        for idx, el in enumerate(states_arr):
+            if el == -1:
+                continue
+            if acc_st_arr[idx] == 1:
+                if idx == len(states_arr) - 1:
+                    print(el)
+                else:
+                    print(el, end=",")
+    else:
+        print("")
+    print(init_state)
+    for i in range(len(states_arr)):
+        for j in range(len(symbols_arr)):
+            if dka_arr[i][j] == -1:
+                break
+            print("{},{}->{}".format(states_arr[i], symbols_arr[j], states_arr[dka_arr[i][j]]))
+
 
 def main():
     states_arr = input("").split(',')
@@ -123,18 +165,27 @@ def main():
     acc_states_arr = input("").split(',')
     init_state = input("")
     dka_arr = parse_transitions(states_arr, symbols_arr)
-    init_state = states_arr.index(init_state)
+    init_state_idx = states_arr.index(init_state)
 
     #print_arr(dka_arr, len(states_arr), len(symbols_arr))
+    if (len(acc_states_arr) != 1 and acc_states_arr[0] != '') and len(acc_states_arr) < len(states_arr):
+        dka_tr_arr, states_tr_arr, acc_states_parsed_tr_arr = remove_unreachable(dka_arr, states_arr, parse_acc_states(states_arr, acc_states_arr), init_state_idx)
+        new_dka, new_states_arr, new_acc_st_arr = minimization(dka_tr_arr, states_tr_arr, symbols_arr, acc_states_parsed_tr_arr)
+    else:
+        new_states_arr = [init_state]
+        new_dka = [[0 for i in range(len(symbols_arr))] for j in range(1)]
+        if len(acc_states_arr) == len(states_arr):
+            new_acc_st_arr = [1]
+        else:
+            new_acc_st_arr = []
+    #print_arr(new_dka, len(new_states_arr), len(symbols_arr))
 
-    dka_tr_arr, states_tr_arr, acc_states_parsed_tr_arr = remove_unreachable(dka_arr, states_arr, parse_acc_states(states_arr, acc_states_arr), init_state)
+    deparse(new_dka, new_states_arr, symbols_arr, new_acc_st_arr, init_state)
 
-    new_dka, new_states_arr, new_acc_st_arr = minimization(dka_tr_arr, states_tr_arr, symbols_arr, acc_states_parsed_tr_arr)
-
-    print_arr(new_dka, len(new_states_arr), len(symbols_arr))
-    print(new_states_arr)
-    print(new_acc_st_arr)
-    print(symbols_arr)
+    #print_arr(new_dka, len(new_states_arr), len(symbols_arr))
+    #print(new_states_arr)
+    #print(new_acc_st_arr)
+    #print(symbols_arr)
 
 if __name__ == "__main__":
     main()
